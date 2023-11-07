@@ -3,9 +3,6 @@ from datetime import datetime
 import re
 import pickle
 
-records = {}
-
-
 def user_error(func):
     def inner(*args):
         try:
@@ -20,51 +17,45 @@ def user_error(func):
 
 @user_error
 def add_record(*args):
-    contact_id = args[0]
+    contact_name = args[0]
     contact_num = args[1]
-    records[contact_id] = contact_num
-    return f"Add record {contact_id = }, {contact_id = }"
+    record = Record(contact_name)
+    record.add_phone(contact_num)
+    book.add_record(record)
+    return f"Додано запис {contact_name}, {contact_num}"
 
 
 @user_error
 def change_record(*args):
-    contact_id = args[0]
-    new_contact_id = args[1]
-    rec = records[contact_id]
-    if rec:
-        records[contact_id] = new_contact_id
-        return f"Change record {contact_id = }, {new_contact_id = }"
+    contact_name = args[0]
+    new_contact_name = args[1]
+    record = book.find(contact_name)
+    if record:
+        record.name.value = new_contact_name
+        return f"Змінено запис {contact_name}, {new_contact_name}"
 
 @user_error
-def phone(contact_id):
-    if contact_id in records:
-        return f"{contact_id}'s phone number is {records[contact_id]}"
+def phone(contact_name):
+    record = book.find(contact_name)
+    if record:
+        return f"Номер телефону {contact_name}: {', '.join(p.value for p in record.phones)}"
 
 @user_error
 def show_all():
-    print(records)
+    for record in book.data.values():
+        print(record)
 
-@user_error
-def hello():
-    print("How can I help you?")
-
-@user_error
-def bye():
-    return "Good bye!"
-
-def unknown(*args):
-    return "Unknown command. Try again."
-        
-
-COMMANDS = {add_record: "add record",
-            change_record: "change record",
-            phone: "phone",
-            show_all: "show all",
-            hello: "hello",
-            bye: "bye",
-            bye: "close",
-            bye: "exit"
-            }
+# Оновіть словник COMMANDS, щоб включити команди "знайти" та "видалити".
+COMMANDS = {
+    add_record: "додати запис",
+    change_record: "змінити запис",
+    phone: "телефон",
+    show_all: "показати всі",
+    hello: "привіт",
+    bye: "прощавай",
+    unknown: "знайти",
+    unknown: "видалити"
+}
 
 
 def parser(text: str):
@@ -78,9 +69,9 @@ def main():
     while True:
         user_input = input(">>>").lower()
         func, data = parser(user_input)
-        result = (func(*data))
+        result = func(*data)
         print(result)
-        if result == "Good bye!":
+        if result == "Прощавай!":
             break
 
 filename = "Homework_12.bin"
