@@ -3,6 +3,86 @@ from datetime import datetime
 import re
 import pickle
 
+records = {}
+
+
+def user_error(func):
+    def inner(*args):
+        try:
+            return func(*args)
+        except IndexError:
+            return "Enter username"
+        except KeyError:
+            return "Contact not found"
+    return inner
+
+
+
+@user_error
+def add_record(*args):
+    contact_id = args[0]
+    contact_num = args[1]
+    records[contact_id] = contact_num
+    return f"Add record {contact_id = }, {contact_id = }"
+
+
+@user_error
+def change_record(*args):
+    contact_id = args[0]
+    new_contact_id = args[1]
+    rec = records[contact_id]
+    if rec:
+        records[contact_id] = new_contact_id
+        return f"Change record {contact_id = }, {new_contact_id = }"
+
+@user_error
+def phone(contact_id):
+    if contact_id in records:
+        return f"{contact_id}'s phone number is {records[contact_id]}"
+
+@user_error
+def show_all():
+    print(records)
+
+@user_error
+def hello():
+    print("How can I help you?")
+
+@user_error
+def bye():
+    return "Good bye!"
+
+def unknown(*args):
+    return "Unknown command. Try again."
+        
+
+COMMANDS = {add_record: "add record",
+            change_record: "change record",
+            phone: "phone",
+            show_all: "show all",
+            hello: "hello",
+            bye: "bye",
+            bye: "close",
+            bye: "exit"
+            }
+
+
+def parser(text: str):
+    for func, kw in COMMANDS.items():
+        if text.startswith(kw):
+            return func, text[len(kw):].strip().split()
+    return unknown, []
+
+
+def main():
+    while True:
+        user_input = input(">>>").lower()
+        func, data = parser(user_input)
+        result = (func(*data))
+        print(result)
+        if result == "Good bye!":
+            break
+
 filename = "Homework_12.bin"
 
 class Field:
@@ -49,10 +129,10 @@ class Phone(Field):
         return self.value
 
 class Record:
-    def __init__(self, name, birthday=None):
+    def __init__(self, name, phone=None, birthday=None):
         self.name = Name(name)
-        self.phones = []
-    
+        self.phones = [Phone(phone)] if phone else []
+  
     def add_phone(self, phone):
         # if isinstance(phone, Phone):
         self.phones.append(Phone(phone))
@@ -121,16 +201,16 @@ class AddressBook(UserDict):
         end_index = page_number * self.page_size
         return list(self.data.values())[start_index:end_index]
 
-    def __iter__(self):
-        self.current_page = 1
-        return self
+    # def __iter__(self):
+    #     self.current_page = 1
+    #     return self
 
-    def __next__(self):
-        if (self.current_page - 1) * self.page_size < len(self.data):
-            page = self.get_page(self.current_page)
-            self.current_page += 1
-            return page
-        raise StopIteration
+    # def __next__(self):
+    #     if (self.current_page - 1) * self.page_size < len(self.data):
+    #         page = self.get_page(self.current_page)
+    #         self.current_page += 1
+    #         return page
+    #     raise StopIteration
     
     def save_addressbook(self):
         with open(self.file_name, "wb") as file:
@@ -143,6 +223,9 @@ class AddressBook(UserDict):
         except FileNotFoundError:
             self.data = {}
 
+    def __str__(self) -> str:
+        return "\n".join(str(r) for r in self.values())
+
 def search_contacts(address_book, search_terms):
     match_contacts = []
     for record in address_book.values():
@@ -151,3 +234,35 @@ def search_contacts(address_book, search_terms):
         return match_contacts
 
 if __name__ == "__main__":
+        # Створення нової адресної книги
+    book = AddressBook()
+
+    # Створення запису для John
+    john_record = Record("John")
+    john_record.add_phone("1234567890")
+    john_record.add_phone("5555555555")
+
+    # Додавання запису John до адресної книги
+    book.add_record(john_record)
+
+    # Створення та додавання нового запису для Jane
+    jane_record = Record("Jane")
+    jane_record.add_phone("9876543210")
+    book.add_record(jane_record)
+
+    # Виведення всіх записів у книзі
+    for name, record in book.data.items():
+        print(record)
+
+    # Знаходження та редагування телефону для John
+    john = book.find("John")
+    john.edit_phone("1234567890", "1112223333")
+
+    print(john)  # Виведення: Contact name: John, phones: 1112223333; 5555555555
+
+    # Пошук конкретного телефону у записі John
+    found_phone = john.find_phone("5555555555")
+    print(f"{john.name}: {found_phone}")  # Виведення: 5555555555
+
+    # Видалення запису Jane
+    book.delete("Jane")
