@@ -149,7 +149,7 @@ class Record:
                 self.phones[i] = Phone(new_phone)
                 return 
         raise ValueError("Phone number not found")  
-
+      
     def find_phone(self, phone):
         for p in self.phones:
             if p.value == phone:
@@ -195,43 +195,37 @@ class AddressBook(UserDict):
     def delete(self, name):
         if name in self.data:
             del self.data[name]
-    
+
     def get_page(self, page_number):
         start_index = (page_number - 1) * self.page_size
         end_index = page_number * self.page_size
         return list(self.data.values())[start_index:end_index]
 
-    # def __iter__(self):
-    #     self.current_page = 1
-    #     return self
-
-    # def __next__(self):
-    #     if (self.current_page - 1) * self.page_size < len(self.data):
-    #         page = self.get_page(self.current_page)
-    #         self.current_page += 1
-    #         return page
-    #     raise StopIteration
-    
-    def save_addressbook(self):
-        with open(self.file_name, "wb") as file:
+    def save_addressbook(self, file_name):
+        with open(file_name, "wb") as file:
             pickle.dump(self.data, file)
     
-    def load_addressbook(self):
+    def load_addressbook(self, file_name):
         try:
-            with open(self.file_name, "rb") as file:
+            with open(file_name, "rb") as file:
                 self.data = pickle.load(file)
         except FileNotFoundError:
             self.data = {}
 
-    def __str__(self) -> str:
-        return "\n".join(str(r) for r in self.values())
-
-def search_contacts(address_book, search_terms):
-    match_contacts = []
-    for record in address_book.values():
-        if search_terms in record.name.value or any(search_terms in phone.value for phone in record.phone):
-            match_contacts.append(record)
+    def find_contacts(self, search_terms):
+        match_contacts = []
+        for record in self.values():
+            if search_terms in record.name.value or any(search_terms in phone.value for phone in record.phones):
+                match_contacts.append(record)
         return match_contacts
+
+
+# def search_contacts(address_book, search_terms):
+#     match_contacts = []
+#     for record in address_book.values():
+#         if search_terms in record.name.value or any(search_terms in phone.value for phone in record.phone):
+#             match_contacts.append(record)
+#         return match_contacts
 
 if __name__ == "__main__":
         # Створення нової адресної книги
